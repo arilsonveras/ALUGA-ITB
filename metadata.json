@@ -1,0 +1,6 @@
+{
+  "name": "Aluga ITB",
+  "description": "Aluga ITB - Aluguel de Espaços para Eventos Itaituba. Plataforma para aluguel e reserva de espaços de forma expressa via PIX.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
