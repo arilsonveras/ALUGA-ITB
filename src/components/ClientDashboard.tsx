@@ -275,7 +275,7 @@ export default function ClientDashboard({
                         onClick={() => onApproveReservation(res.id)}
                         className="flex-1 py-1.5 px-3 bg-emerald-600 text-white rounded-lg text-xs font-semibold hover:bg-emerald-700 shadow-sm flex items-center justify-center gap-1 transition-colors cursor-pointer"
                       >
-                        Pagar Agora (Simulador)
+                        Confirmar Pagamento PIX
                       </button>
                     </div>
                   </div>
@@ -371,7 +371,7 @@ export default function ClientDashboard({
                             }}
                             className="flex-1 py-1.5 bg-sky-600 hover:bg-sky-700 text-white text-xs font-bold rounded-lg flex items-center justify-center gap-1 cursor-pointer transition-colors"
                           >
-                            Quitar Agora (Simulador)
+                            Confirmar Quitação PIX
                           </button>
                         </div>
                       </div>

@@ -13,7 +13,7 @@ export const DEFAULT_ENVIRONMENTS: Environment[] = [
       'https://images.unsplash.com/photo-1541123437800-1bb1317badc2?auto=format&fit=crop&w=800&q=80',
       'https://images.unsplash.com/photo-1519167758481-83f550bb49b3?auto=format&fit=crop&w=800&q=80'
     ],
-    ownerId: 'owner-default-1',
+    ownerId: 'beatriz@alugaitb.com.br',
     pixKey: '99988877766',
     pixType: 'cpf',
     contractRules: 'REGRAS DE CONTRATO - SALÃO TAPAJÓS VISTA\n\n1. LEI DO SILÊNCIO: A partir das 22h, o som de caixas acústicas deve ser mantido em nível baixo (som de fundo), respeitando as diretrizes internas da Convenção de Condomínio. Não são permitidas bandas ou DJs de alta potência.\n2. LIMPEZA DA CHURRASQUEIRA: A churrasqueira e os utensílios de cozinha utilizados deve ser limpos pelo locatário, ou será cobrada uma taxa de limpeza compulsória no valor fixo de R$ 150,00.\n3. BEBIDAS E VIDROS: Evitar copos e garrafas de vidro que possam quebrar na área externa perto das plantas.\n4. SEGURANÇA E ACESSO: O condomínio exige envio prévio da lista com nome e RG de todos os convidados para liberação na portaria até 12 horas antes do evento.',
@@ -43,7 +43,7 @@ export const DEFAULT_ENVIRONMENTS: Environment[] = [
       'https://images.unsplash.com/photo-1497366216548-37526070297c?auto=format&fit=crop&w=800&q=80',
       'https://images.unsplash.com/photo-1497366811353-6870744d04b2?auto=format&fit=crop&w=800&q=80'
     ],
-    ownerId: 'owner-default-1',
+    ownerId: 'beatriz@alugaitb.com.br',
     pixKey: 'itaituba.espacos@alugaitb.com.br',
     pixType: 'email',
     contractRules: 'REGRAS DE CONTRATO DO ESPAÇO:\n\n1. CANCELAMENTO: Permitido com reembolso integral até 24 horas antes do início da reserva. Após este prazo, será retida uma taxa de 50% do valor total.\n2. LIMPEZA: O espaço deverá ser entregue em plenas condições de uso e higiene. Lixo deve ser depositado nos coletores apropriados.\n3. SILÊNCIO: Respeitar o limite sonoro de 45dB, compatível com o ambiente corporativo do edifício.\n4. EQUIPAMENTOS: O cliente é responsável por qualquer dano causado aos equipamentos de vídeo e videoconferência durante o período reservado.\n5. CAPACIDADE: Sob nenhuma circunstância é permitida a permanência de um número de pessoas superior ao limite máximo especificado para o ambiente (12 pessoas).',
@@ -73,7 +73,7 @@ export const DEFAULT_ENVIRONMENTS: Environment[] = [
       'https://images.unsplash.com/photo-1598488035139-bdbb2231ce04?auto=format&fit=crop&w=800&q=80',
       'https://images.unsplash.com/photo-1520390138845-126468fc7d0a?auto=format&fit=crop&w=800&q=80'
     ],
-    ownerId: 'owner-default-2',
+    ownerId: 'studio@alugaitb.com.br',
     pixKey: '24.123.456/0001-99',
     pixType: 'cnpj',
     contractRules: 'REGRAS DE CONTRATO DO ESTÚDIO DE FOTOGRAFIA:\n\n1. USO DOS EQUIPAMENTOS: Todas as luzes e equipamentos do estúdio estão inclusos no preço da hora. O manuseio deve ser feito de forma cuidadosa. Se houver dúvidas, solicite apoio na portaria do prédio.\n2. AJUSTE DE CENÁRIO: O estúdio dispõe de 3 rolos de fundos de papel. Não pisar com calçados sujos sobre o fundo de papel. Caso haja sujeiras visíveis irreparáveis no papel, será cobrado R$ 40,00 por metro danificado.\n3. REPOSIÇÃO: Entregue o estúdio organizado, com os tripés e cabos recolhidos.\n4. ATRASOS: O tempo limite de tolerância é de 10 minutos. O uso além do período reservado será cobrado proporcionalmente em frações de 30 minutos.\n5. ANIMAIS: Permitido animais de estimação apenas se previamente aprovados pelo proprietário para ensaios pet.',
@@ -103,7 +103,7 @@ export const DEFAULT_ENVIRONMENTS: Environment[] = [
       'https://images.unsplash.com/photo-1629909613654-28e377c37b09?auto=format&fit=crop&w=800&q=80',
       'https://images.unsplash.com/photo-1527689368864-3a821dbccc34?auto=format&fit=crop&w=800&q=80'
     ],
-    ownerId: 'owner-default-3',
+    ownerId: 'clinica@alugaitb.com.br',
     pixKey: 'contato@clinicaitb.com.br',
     pixType: 'email',
     contractRules: 'REGRAS DE CONTRATO DO CONSULTÓRIO:\n\n1. SIGILO E DISCRIÇÃO: Visando resguardar a privacidade e o sigilo profissional mútuo do consultório, é expressamente vetado tirar fotos na recepção em que apareçam outros pacientes.\n2. ISOLAMENTO ACÚSTICO: Manter a porta do consultório sempre fechada durante o atendimento.\n3. USO DO DIFUSOR: Fica liberada a escolha de óleos essenciais para o difusor elétrico. Ao final do uso, favor desligar o difusor da tomada.\n4. HORÁRIO E TOLERÂNCIA: Pedimos pontualidade absoluta. Não é permitida a ocupação antecipada caso haja outro profissional em atendimento anterior.\n5. ALIMENTAÇÃO: Não é permitido o consumo de refeições com odor forte (como almoços) dentro da sala de atendimento.',

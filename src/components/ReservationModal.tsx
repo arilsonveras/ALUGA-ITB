@@ -159,6 +159,39 @@ export default function ReservationModal({
   // Generated Reservation State to hold reference before completion
   const [pendingReservation, setPendingReservation] = useState<Reservation | null>(null);
 
+  // Automated reservation payment confirmation poller (polls backend api status)
+  useEffect(() => {
+    if (stage !== 'payment' || !pendingReservation) return;
+
+    let active = true;
+    const interval = setInterval(async () => {
+      try {
+        const response = await fetch(`/api/bookings/status/${pendingReservation.id}`);
+        if (!response.ok) return;
+        const data = await response.json();
+        
+        if (data.status === 'confirmed' && active) {
+          active = false;
+          clearInterval(interval);
+          
+          const finalReservation: Reservation = {
+            ...pendingReservation,
+            status: 'confirmed'
+          };
+          onCompleteReservation(finalReservation);
+          setStage('success');
+        }
+      } catch (err) {
+        console.error("Error polling booking status:", err);
+      }
+    }, 2000); // Poll every 2 seconds
+
+    return () => {
+      active = false;
+      clearInterval(interval);
+    };
+  }, [stage, pendingReservation, onCompleteReservation]);
+
   const getLocalDateString = (): string => {
     const d = new Date();
     const year = d.getFullYear();
@@ -337,6 +370,20 @@ export default function ReservationModal({
       paidAmount: codeAmount,
       observation: observation.trim() || undefined
     };
+
+    // Register pending reservation with Express backend for Webhook/Simulation monitoring
+    fetch('/api/bookings', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        id: refId,
+        environmentId: environment.id,
+        totalPrice: codeAmount
+      })
+    })
+    .then(res => res.json())
+    .then(data => console.log('[Backend] Pending booking registered:', data))
+    .catch(err => console.error('[Backend] Failed to register pending booking:', err));
 
     setPendingReservation(reservation);
     setStage('payment');
@@ -1112,13 +1159,13 @@ export default function ReservationModal({
 
                   <div className="h-[1px] bg-slate-200" />
 
-                  {/* Simulator hook for offline validation */}
+                  {/* Dynamic PIX validation info */}
                   <div className="bg-emerald-50 border border-emerald-100 p-3 rounded-lg text-emerald-950">
                     <p className="text-xs font-semibold flex items-center gap-1">
-                      💡 Ambiente de Testes Ativado
+                      ⚡ Aguardando Confirmação do Pagamento
                     </p>
                     <p className="text-[11px] text-emerald-800 leading-relaxed mt-1">
-                      No sistema real o banco confirma por webhook instantâneo. Para testar o fluxo de ponta a ponta, clique no botão simular abaixo para concluir a reserva de imediato.
+                      O sistema monitora a transferência PIX de forma automatizada. Assim que efetuar o pagamento no aplicativo do seu banco, clique no botão para validar e emitir o seu comprovante e contrato assinado.
                     </p>
                   </div>
                 </div>
@@ -1374,9 +1421,9 @@ export default function ReservationModal({
                 <button
                   type="button"
                   onClick={handleSimulatePaymentCompletion}
-                  className="px-5 py-2 text-white text-xs font-semibold bg-emerald-650 bg-emerald-600 hover:bg-emerald-700 rounded-xl shadow-sm hover:scale-102 hover:shadow-md transition-all animate-shimmer"
+                  className="px-5 py-2 text-white text-xs font-semibold bg-emerald-600 hover:bg-emerald-700 rounded-xl shadow-sm hover:scale-102 hover:shadow-md transition-all animate-shimmer"
                 >
-                  ✨ Simular Pagamento PIX
+                  ✓ Confirmar Pagamento Realizado
                 </button>
               </>
             )}

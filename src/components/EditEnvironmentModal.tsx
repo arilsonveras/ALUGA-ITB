@@ -514,7 +514,7 @@ export default function EditEnvironmentModal({ environment, onClose, onSave, cat
                     Gerenciamento Avançado de Tarifas Dinâmicas
                   </p>
                   <p>
-                    Diga adeus ao preço fixo! Conquiste o melhor aproveitamento de sua ocupação personalizando o valor por hora de acordo com a temporada ou fins de semana (sábado e domingo). Quando um locatário escolher um desses períodos, o valor será reajustado eletronicamente na simulação.
+                    Diga adeus ao preço fixo! Conquiste o melhor aproveitamento de sua ocupação personalizando o valor por hora de acordo com a temporada ou fins de semana (sábado e domingo). Quando um locatário escolher um desses períodos, o valor será reajustado eletronicamente no cálculo final da reserva.
                   </p>
                 </div>
 

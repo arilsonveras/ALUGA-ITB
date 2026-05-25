@@ -9,12 +9,12 @@ interface MapPickerCardProps {
   isReadOnly?: boolean;
 }
 
-// Map bounds for São Paulo relative translation
+// Map bounds for Itaituba, PA region translation
 const MAP_BOUNDS = {
-  minLat: -23.53,
-  maxLat: -23.60,
-  minLng: -46.72,
-  maxLng: -46.60,
+  minLat: -4.25,
+  maxLat: -4.30,
+  minLng: -56.02,
+  maxLng: -55.95,
 };
 
 export default function MapPickerCard({
@@ -66,12 +66,12 @@ export default function MapPickerCard({
     onChange(Number(clickedLat.toFixed(4)), Number(clickedLng.toFixed(4)));
   };
 
-  // Quick preset locations in São Paulo for testing
+  // Quick preset locations in Itaituba for testing
   const PRESET_PLACES = [
-    { name: 'Av. Paulista', lat: -23.5616, lng: -46.6560 },
-    { name: 'Pinheiros', lat: -23.5670, lng: -46.6850 },
-    { name: 'Jardins', lat: -23.5645, lng: -46.6660 },
-    { name: 'Vila Mariana', lat: -23.5850, lng: -46.6385 }
+    { name: 'Centro', lat: -4.2687, lng: -55.9895 },
+    { name: 'Bela Vista', lat: -4.2705, lng: -55.9870 },
+    { name: 'Perpétuo Socorro', lat: -4.2721, lng: -55.9812 },
+    { name: 'Orla do Tapajós', lat: -4.2660, lng: -55.9920 }
   ];
 
   return (
@@ -118,7 +118,7 @@ export default function MapPickerCard({
       >
         {/* Satellite or standard map background theme */}
         {isSatellite ? (
-          // Satellite View simulation style
+          // Satellite View style
           <div className="absolute inset-0 bg-slate-900 overflow-hidden">
             {/* Ambient grid and landmass blobs */}
             <div className="absolute inset-0 bg-[radial-gradient(#1e293b_1px,transparent_1px)] [background-size:16px_16px] opacity-40" />
@@ -131,14 +131,14 @@ export default function MapPickerCard({
               <path d="M 120,240 Q 240,180 320,120 T 400,80" fill="none" stroke="#0284c7" strokeWidth="4" />
             </svg>
 
-            {/* Simulated label texts */}
-            <div className="absolute top-1/3 left-1/4 text-[9px] text-slate-500 font-bold font-mono uppercase tracking-widest pointer-events-none">JARDINS</div>
-            <div className="absolute top-10 right-20 text-[9px] text-slate-500 font-bold font-mono uppercase tracking-widest pointer-events-none">AV. PAULISTA</div>
-            <div className="absolute bottom-12 left-1/3 text-[9px] text-slate-500 font-bold font-mono uppercase tracking-widest pointer-events-none">IBIRAPUERA</div>
-            <div className="absolute top-2/3 right-1/4 text-[9px] text-slate-500 font-bold font-mono uppercase tracking-widest pointer-events-none">VILA MARIANA</div>
+            {/* Label texts */}
+            <div className="absolute top-1/3 left-1/4 text-[9px] text-slate-500 font-bold font-mono uppercase tracking-widest pointer-events-none">BELA VISTA</div>
+            <div className="absolute top-10 right-20 text-[9px] text-slate-500 font-bold font-mono uppercase tracking-widest pointer-events-none">AV. GETÚLIO VARGAS</div>
+            <div className="absolute bottom-12 left-1/3 text-[9px] text-slate-500 font-bold font-mono uppercase tracking-widest pointer-events-none">ORLA TAPAJÓS</div>
+            <div className="absolute top-2/3 right-1/4 text-[9px] text-slate-500 font-bold font-mono uppercase tracking-widest pointer-events-none">PERPÉTUO SOCORRO</div>
           </div>
         ) : (
-          // Vector Map simulation style (soft off-white elegant layout)
+          // Vector Map style (soft off-white elegant layout)
           <div className="absolute inset-0 bg-[#f8fafc] overflow-hidden">
             {/* Blocks and streets layout pattern */}
             <div className="absolute inset-0 grid grid-cols-6 grid-rows-6 opacity-30">
@@ -147,16 +147,16 @@ export default function MapPickerCard({
               ))}
             </div>
 
-            {/* Custom stylized green parks (Ibirapuera, Trianon, etc) */}
+            {/* Custom stylized green parks (Orla, Trianon, etc) */}
             <div className="absolute bottom-4 left-1/3 w-32 h-16 bg-emerald-150 bg-emerald-100 rounded-full border border-emerald-250/50 opacity-80 flex items-center justify-center p-2 text-center pointer-events-none">
-              <span className="text-[8px] font-black text-emerald-800 uppercase tracking-widest">🌳 Pq. Ibirapuera</span>
+              <span className="text-[8px] font-black text-emerald-800 uppercase tracking-widest">🌳 Orla do Tapajós</span>
             </div>
             
             <div className="absolute top-8 left-12 w-16 h-12 bg-emerald-100/60 rounded-xl border border-emerald-200/50 flex items-center justify-center pointer-events-none">
-              <span className="text-[7px] font-black text-emerald-800 uppercase tracking-widest">🏡 Parque</span>
+              <span className="text-[7px] font-black text-emerald-800 uppercase tracking-widest">🌳 Bosque</span>
             </div>
 
-            {/* Rivers (Rio Pinheiros / Rivers in São Paulo) */}
+            {/* Rivers (Rio Tapajós) */}
             <svg className="absolute inset-0 w-full h-full opacity-60" xmlns="http://www.w3.org/2000/svg">
               <path d="M -10,30 Q 150,110 240,20 T 520,30" fill="none" stroke="#bae6fd" strokeWidth="14" />
               <path d="M -10,30 Q 150,110 240,20 T 520,30" fill="none" stroke="#e0f2fe" strokeWidth="6" />
@@ -164,26 +164,26 @@ export default function MapPickerCard({
 
             {/* Major avenues / roads */}
             <svg className="absolute inset-0 w-full h-full opacity-70" xmlns="http://www.w3.org/2000/svg">
-              {/* Av. Paulista */}
+              {/* Av. Getúlio Vargas */}
               <line x1="-20" y1="50" x2="420" y2="45" stroke="#ffffff" strokeWidth="10" />
               <line x1="-20" y1="50" x2="420" y2="45" stroke="#e2e8f0" strokeWidth="2" strokeDasharray="4,4" />
               
-              {/* Av. Brigadeiro */}
+              {/* Av. Marechal Rondon */}
               <line x1="280" y1="0" x2="280" y2="280" stroke="#ffffff" strokeWidth="8" />
               
-              {/* Av. Rebouças */}
+              {/* Rod. Transamazônica */}
               <line x1="80" y1="0" x2="180" y2="280" stroke="#ffffff" strokeWidth="8" />
             </svg>
 
             {/* Landmark text indicators */}
             <div className="absolute top-12 left-1/4 select-none pointer-events-none border border-slate-200 bg-white/70 backdrop-blur-xs rounded px-1.5 py-0.5 text-[8px] font-bold text-slate-500 font-mono uppercase tracking-wider">
-              Av. Paulista
+              Av. Getúlio Vargas
             </div>
             <div className="absolute bottom-28 right-8 select-none pointer-events-none border border-slate-200 bg-white/70 backdrop-blur-xs rounded px-1.5 py-0.5 text-[8px] font-bold text-slate-500 font-mono uppercase tracking-wider">
-              Vila Mariana
+              Perpétuo Socorro
             </div>
             <div className="absolute top-28 left-4 select-none pointer-events-none border border-slate-200 bg-white/70 backdrop-blur-xs rounded px-1.5 py-0.5 text-[8px] font-bold text-slate-500 font-mono uppercase tracking-wider">
-              Pinheiros
+              Bela Vista
             </div>
           </div>
         )}
@@ -260,7 +260,7 @@ export default function MapPickerCard({
       {/* Preset fast selector shortcuts */}
       {!isReadOnly && (
         <div className="pt-1.5 border-t border-slate-100">
-          <span className="text-[9px] font-extrabold text-slate-400 uppercase tracking-widest block mb-1.5">Ajuste Rápido para Bairros de SP:</span>
+          <span className="text-[9px] font-extrabold text-slate-400 uppercase tracking-widest block mb-1.5">Ajuste Rápido de Localização:</span>
           <div className="flex flex-wrap gap-1.5">
             {PRESET_PLACES.map((pt) => {
               const isSelected = Math.abs(latitude - pt.lat) < 0.005 && Math.abs(longitude - pt.lng) < 0.005;

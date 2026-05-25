@@ -42,10 +42,9 @@ export default function LoginModal({ onClose, onLoginSuccess }: LoginModalProps)
     }
     // Seed default hosts so they have valid loggable logins
     const defaults: SavedHost[] = [
-      { name: 'Beatriz S. (Anfitriã)', email: 'owner-default-1', passwordHash: '123456' },
       { name: 'Beatriz S. (Anfitriã)', email: 'beatriz@alugaitb.com.br', passwordHash: '123456' },
-      { name: 'Tapajós Studio Owner', email: 'owner-default-2', passwordHash: '123456' },
-      { name: 'Tapajós Studio Owner', email: 'studio@alugaitb.com.br', passwordHash: '123456' }
+      { name: 'Tapajós Studio Owner', email: 'studio@alugaitb.com.br', passwordHash: '123456' },
+      { name: 'Clínica Perpétuo Socorro', email: 'clinica@alugaitb.com.br', passwordHash: '123456' }
     ];
     return defaults;
   };
@@ -88,14 +87,14 @@ export default function LoginModal({ onClose, onLoginSuccess }: LoginModalProps)
         name: foundHost.name,
         email: foundHost.email,
         role: 'owner',
-        balance: foundHost.email.startsWith('owner-default') ? 1450 : 0
+        balance: foundHost.email === 'beatriz@alugaitb.com.br' ? 1450 : 0
       };
       onLoginSuccess(ownerProfile);
       return;
     }
 
     // Generic error
-    setErrorMessage('Credenciais incorretas. Para o administrador, use usuário "arilsonveras" e sua senha. Para anfitriões, insira dados válidos de cadastro.');
+    setErrorMessage('Credenciais incorretas. Caso seja administrador ou anfitrião credenciado, tente novamente com dados válidos.');
   };
 
   const handleRegisterSubmit = (e: React.FormEvent) => {
@@ -277,14 +276,6 @@ export default function LoginModal({ onClose, onLoginSuccess }: LoginModalProps)
               >
                 Superar Autenticação & Acessar
               </button>
-
-              <div className="mt-4 pt-4 border-t border-slate-100 text-[10px] text-slate-450 leading-relaxed space-y-1 bg-slate-50 p-3 rounded-xl">
-                <p>💡 <strong>Anfitriões Padrão de Teste:</strong></p>
-                <ul className="list-disc pl-3.5 space-y-0.5">
-                  <li>E-mail: <code>beatriz@alugaitb.com.br</code> / Senha: <code>123456</code></li>
-                  <li>E-mail: <code>studio@alugaitb.com.br</code> / Senha: <code>123456</code></li>
-                </ul>
-              </div>
             </form>
           ) : (
             <form onSubmit={handleRegisterSubmit} className="space-y-4">

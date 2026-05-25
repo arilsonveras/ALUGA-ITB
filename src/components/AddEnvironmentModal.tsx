@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { X, Plus, Trash2, ShieldAlert, Sparkles, Image as ImageIcon, MapPin, Users, DollarSign, Clock, Check } from 'lucide-react';
-import { Environment, EnvironmentCategory, WeeklyWorkingHours } from '../types';
+import { Environment, EnvironmentCategory, WeeklyWorkingHours, UserProfile } from '../types';
 import MapPickerCard from './MapPickerCard';
 
 interface AddEnvironmentModalProps {
   onClose: () => void;
-  onAdd: (newEnv: Environment) => void;
-  ownerId: string;
+  onAdd: (newEnv: Environment, autoLoginUser?: UserProfile) => void;
+  currentUser: UserProfile;
   categories: { id: string; name: string; emoji: string }[];
   showConfirm?: (title: string, message: string, onConfirm: () => void, isDanger?: boolean) => void;
 }
@@ -92,7 +92,7 @@ const SUGGESTED_AMENITIES = [
   'Estacionamento Pago no Prédio', 'Acessibilidade / Elevador', 'Segurança 24h'
 ];
 
-export default function AddEnvironmentModal({ onClose, onAdd, ownerId, categories, showConfirm }: AddEnvironmentModalProps) {
+export default function AddEnvironmentModal({ onClose, onAdd, currentUser, categories, showConfirm }: AddEnvironmentModalProps) {
   const handleConfirm = (title: string, msg: string, onOk: () => void, isDanger = false) => {
     if (showConfirm) {
       showConfirm(title, msg, onOk, isDanger);
@@ -124,6 +124,14 @@ export default function AddEnvironmentModal({ onClose, onAdd, ownerId, categorie
   const [addressNeighborhood, setAddressNeighborhood] = useState('');
   const [addressCity, setAddressCity] = useState('');
 
+  // Auth fields for final step
+  const [authMode, setAuthMode] = useState<'register' | 'login'>('register');
+  const [authName, setAuthName] = useState('');
+  const [authEmail, setAuthEmail] = useState('');
+  const [authPassword, setAuthPassword] = useState('');
+  const [authConfirmPassword, setAuthConfirmPassword] = useState('');
+  const [authError, setAuthError] = useState<string | null>(null);
+
   // Automatically update formatted full address from component fields
   useEffect(() => {
     const streetPart = addressStreet.trim();
@@ -141,8 +149,8 @@ export default function AddEnvironmentModal({ onClose, onAdd, ownerId, categorie
 
     setAddress(formatted);
   }, [addressStreet, addressNumber, addressComplement, addressNeighborhood, addressCity]);
-  const [latitude, setLatitude] = useState<number>(-23.5645);
-  const [longitude, setLongitude] = useState<number>(-46.6660);
+  const [latitude, setLatitude] = useState<number>(-4.2691);
+  const [longitude, setLongitude] = useState<number>(-55.9904);
   const [description, setDescription] = useState('');
   const [pixKey, setPixKey] = useState('');
   const [pixType, setPixType] = useState<'cpf' | 'cnpj' | 'email' | 'phone' | 'random'>('cpf');
@@ -155,7 +163,95 @@ export default function AddEnvironmentModal({ onClose, onAdd, ownerId, categorie
   const [selectedPresetIndex, setSelectedPresetIndex] = useState<number>(0);
 
   // Tab control
-  const [activeTab, setActiveTab] = useState<'basics' | 'hours' | 'agreement' | 'images'>('basics');
+  const [activeTab, setActiveTab] = useState<'basics' | 'hours' | 'agreement' | 'images' | 'auth'>('basics');
+  const [modalError, setModalError] = useState<string | null>(null);
+
+  const validateStep = (step: 'basics' | 'hours' | 'agreement' | 'images' | 'auth'): { valid: boolean; error: string | null } => {
+    if (step === 'basics') {
+      if (!title.trim()) {
+        return { valid: false, error: 'Por favor, informe o título do espaço.' };
+      }
+      if (!addressStreet.trim()) {
+        return { valid: false, error: 'Por favor, informe a Rua/Avenida do endereço.' };
+      }
+      if (!addressNumber.trim()) {
+        return { valid: false, error: 'Por favor, informe o número do endereço.' };
+      }
+      if (!addressNeighborhood.trim()) {
+        return { valid: false, error: 'Por favor, informe o bairro do endereço.' };
+      }
+      if (!addressCity.trim()) {
+        return { valid: false, error: 'Por favor, informe a cidade do endereço.' };
+      }
+      if (!description.trim()) {
+        return { valid: false, error: 'Por favor, adicione uma descrição detalhada do espaço.' };
+      }
+      if (!pixKey.trim()) {
+        return { valid: false, error: 'Deixe sua chave PIX configurada para receber pagamentos.' };
+      }
+      if (pricePerHour <= 0 || isNaN(pricePerHour)) {
+        return { valid: false, error: 'O valor por hora deve ser maior que zero R$.' };
+      }
+      if (capacity <= 0 || isNaN(capacity)) {
+        return { valid: false, error: 'A capacidade de pessoas deve ser maior que zero.' };
+      }
+    }
+    if (step === 'hours') {
+      const hasAtLeastOneOpenDay = Object.values(workingHours).some(day => !(day as any).closed);
+      if (!hasAtLeastOneOpenDay) {
+        return { valid: false, error: 'Seu espaço comercial precisa estar aberto para reservas em pelo menos um dia da semana.' };
+      }
+    }
+    if (step === 'agreement') {
+      if (!contractRules.trim()) {
+        return { valid: false, error: 'As regras do contrato não podem estar vazias.' };
+      }
+    }
+    if (step === 'auth') {
+      if (currentUser.email === '') {
+        const emailVal = authEmail.trim().toLowerCase();
+        const passVal = authPassword.trim();
+        if (!emailVal || !passVal) {
+          return { valid: false, error: 'Por favor, preencha o e-mail e a senha do anfitrião.' };
+        }
+        if (authMode === 'register') {
+          const nameVal = authName.trim();
+          const confirmVal = authConfirmPassword.trim();
+          if (!nameVal) {
+            return { valid: false, error: 'Por favor, informe seu nome completo.' };
+          }
+          if (passVal.length < 4) {
+            return { valid: false, error: 'A senha do anfitrião deve ter pelo menos 4 caracteres.' };
+          }
+          if (passVal !== confirmVal) {
+            return { valid: false, error: 'As senhas digitadas não coincidem.' };
+          }
+        }
+      }
+    }
+    return { valid: true, error: null };
+  };
+
+  const handleTabTransition = (targetTab: 'basics' | 'hours' | 'agreement' | 'images' | 'auth') => {
+    setModalError(null);
+    const tabOrder: ('basics' | 'hours' | 'agreement' | 'images' | 'auth')[] = ['basics', 'hours', 'agreement', 'images', 'auth'];
+    const currentIndex = tabOrder.indexOf(activeTab);
+    const targetIndex = tabOrder.indexOf(targetTab);
+
+    if (targetIndex > currentIndex) {
+      for (let i = currentIndex; i < targetIndex; i++) {
+        const stepToValidate = tabOrder[i];
+        if (stepToValidate === 'auth' && currentUser.email !== '') continue;
+        const check = validateStep(stepToValidate);
+        if (!check.valid) {
+          setModalError(check.error);
+          setActiveTab(stepToValidate);
+          return;
+        }
+      }
+    }
+    setActiveTab(targetTab);
+  };
 
   // Set preset contract and default template images when category changes
   const handleCategoryChange = (cat: EnvironmentCategory) => {
@@ -223,22 +319,96 @@ export default function AddEnvironmentModal({ onClose, onAdd, ownerId, categorie
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    setModalError(null);
 
-    if (!title.trim()) {
-      alert('Por favor, informe o título do espaço.');
-      return;
+    // Validate all sequential tabs before submitting
+    const tabOrder: ('basics' | 'hours' | 'agreement' | 'images' | 'auth')[] = ['basics', 'hours', 'agreement', 'images', 'auth'];
+    for (const step of tabOrder) {
+      if (step === 'auth' && currentUser.email !== '') continue;
+      const check = validateStep(step);
+      if (!check.valid) {
+        setModalError(check.error);
+        if (step === 'auth') {
+          setAuthError(check.error);
+        }
+        setActiveTab(step);
+        return;
+      }
     }
-    if (!address.trim()) {
-      alert('Por favor, informe a localização/endereço.');
-      return;
-    }
-    if (!description.trim()) {
-      alert('Por favor, adicione uma descrição detalhada do espaço.');
-      return;
-    }
-    if (!pixKey.trim()) {
-      alert('Deixe sua chave PIX configurada para receber pagamentos.');
-      return;
+
+    let finalOwnerEmail = currentUser.email;
+    let autoLoginUserProfile: UserProfile | undefined = undefined;
+
+    // If guest, they Must complete the final auth form
+    if (currentUser.email === '') {
+      setAuthError(null);
+      const emailVal = authEmail.trim().toLowerCase();
+      const passVal = authPassword.trim();
+
+      if (authMode === 'register') {
+        const nameVal = authName.trim();
+
+        // Add to localStorage saved hosts
+        const savedRaw = localStorage.getItem('aluga_itb_registered_hosts');
+        let hosts: any[] = [];
+        if (savedRaw) {
+          try { hosts = JSON.parse(savedRaw); } catch(e) {}
+        }
+        
+        if (hosts.some(h => h.email.toLowerCase() === emailVal)) {
+          setAuthError('Este e-mail de anfitrião já está cadastrado.');
+          setModalError('Este e-mail de anfitrião já está cadastrado.');
+          setActiveTab('auth');
+          return;
+        }
+
+        const newHost = { name: nameVal, email: emailVal, passwordHash: passVal };
+        localStorage.setItem('aluga_itb_registered_hosts', JSON.stringify([...hosts, newHost]));
+
+        autoLoginUserProfile = {
+          name: nameVal,
+          email: emailVal,
+          role: 'owner',
+          balance: 0
+        };
+        finalOwnerEmail = emailVal;
+      } else {
+        // Login mode verification
+        const savedRaw = localStorage.getItem('aluga_itb_registered_hosts');
+        let hosts: any[] = [
+          { name: 'Beatriz S. (Anfitriã)', email: 'beatriz@alugaitb.com.br', passwordHash: '123456' },
+          { name: 'Tapajós Studio Owner', email: 'studio@alugaitb.com.br', passwordHash: '123456' },
+          { name: 'Clínica Perpétuo Socorro', email: 'clinica@alugaitb.com.br', passwordHash: '123456' }
+        ];
+        if (savedRaw) {
+          try {
+            const parsed = JSON.parse(savedRaw);
+            if (Array.isArray(parsed)) {
+              parsed.forEach(p => {
+                if (!hosts.some(h => h.email.toLowerCase() === p.email.toLowerCase())) {
+                  hosts.push(p);
+                }
+              });
+            }
+          } catch(e) {}
+        }
+
+        const match = hosts.find(h => h.email.toLowerCase() === emailVal && h.passwordHash === passVal);
+        if (!match) {
+          setAuthError('Credenciais incorretas de anfitrião. Tente novamente ou alterne para cadastro.');
+          setModalError('Credenciais incorretas de anfitrião. Tente novamente ou alterne para cadastro.');
+          setActiveTab('auth');
+          return;
+        }
+
+        autoLoginUserProfile = {
+          name: match.name,
+          email: match.email,
+          role: 'owner',
+          balance: match.email === 'beatriz@alugaitb.com.br' ? 1450 : 0
+        };
+        finalOwnerEmail = emailVal;
+      }
     }
 
     // Final image backup if host didn't select any
@@ -262,7 +432,7 @@ export default function AddEnvironmentModal({ onClose, onAdd, ownerId, categorie
       latitude: Number(latitude),
       longitude: Number(longitude),
       images: finalImages,
-      ownerId,
+      ownerId: finalOwnerEmail,
       pixKey,
       pixType,
       contractRules,
@@ -272,7 +442,7 @@ export default function AddEnvironmentModal({ onClose, onAdd, ownerId, categorie
       createdAt: new Date().toISOString()
     };
 
-    onAdd(newEnvironment);
+    onAdd(newEnvironment, autoLoginUserProfile);
   };
 
   return (
@@ -303,7 +473,7 @@ export default function AddEnvironmentModal({ onClose, onAdd, ownerId, categorie
         <div className="flex border-b border-slate-100 text-sm overflow-x-auto bg-white shrink-0 scrollbar-none">
           <button
             type="button"
-            onClick={() => setActiveTab('basics')}
+            onClick={() => handleTabTransition('basics')}
             className={`px-5 py-3 border-b-2 font-medium transition-all ${
               activeTab === 'basics' 
                 ? 'border-emerald-600 text-emerald-600 font-semibold' 
@@ -314,7 +484,7 @@ export default function AddEnvironmentModal({ onClose, onAdd, ownerId, categorie
           </button>
           <button
             type="button"
-            onClick={() => setActiveTab('hours')}
+            onClick={() => handleTabTransition('hours')}
             className={`px-5 py-3 border-b-2 font-medium transition-all ${
               activeTab === 'hours' 
                 ? 'border-emerald-600 text-emerald-600 font-semibold' 
@@ -325,7 +495,7 @@ export default function AddEnvironmentModal({ onClose, onAdd, ownerId, categorie
           </button>
           <button
             type="button"
-            onClick={() => setActiveTab('agreement')}
+            onClick={() => handleTabTransition('agreement')}
             className={`px-5 py-3 border-b-2 font-medium transition-all ${
               activeTab === 'agreement' 
                 ? 'border-emerald-600 text-emerald-600 font-semibold' 
@@ -336,7 +506,7 @@ export default function AddEnvironmentModal({ onClose, onAdd, ownerId, categorie
           </button>
           <button
             type="button"
-            onClick={() => setActiveTab('images')}
+            onClick={() => handleTabTransition('images')}
             className={`px-5 py-3 border-b-2 font-medium transition-all ${
               activeTab === 'images' 
                 ? 'border-emerald-600 text-emerald-600 font-semibold' 
@@ -345,10 +515,33 @@ export default function AddEnvironmentModal({ onClose, onAdd, ownerId, categorie
           >
             🖼️ Fotos do Local
           </button>
+          {currentUser.email === '' && (
+            <button
+              type="button"
+              onClick={() => handleTabTransition('auth')}
+              className={`px-5 py-3 border-b-2 font-medium transition-all ${
+                activeTab === 'auth' 
+                  ? 'border-emerald-600 text-emerald-600 font-semibold' 
+                  : 'border-transparent text-slate-500 hover:text-slate-800'
+              }`}
+            >
+              🔑 Conta do Anfitrião
+            </button>
+          )}
         </div>
 
         {/* Scrollable Form Area */}
         <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-6 space-y-6">
+          
+          {modalError && (
+            <div className="p-4 bg-rose-50 border border-rose-100 text-rose-800 text-xs font-semibold rounded-2xl leading-relaxed flex items-center gap-3.5 animate-in fade-in slide-in-from-top-3 duration-200">
+              <span className="p-1.5 bg-rose-100 text-rose-650 rounded-lg text-sm shrink-0">⚠️</span>
+              <div className="space-y-0.5">
+                <p className="font-bold text-rose-950 text-xs">Existem pendências nesta etapa</p>
+                <p className="font-normal text-rose-700 text-[11px] leading-tight">{modalError}</p>
+              </div>
+            </div>
+          )}
           
           {/* Tab: basics */}
           {activeTab === 'basics' && (
@@ -782,6 +975,121 @@ export default function AddEnvironmentModal({ onClose, onAdd, ownerId, categorie
             </div>
           )}
 
+          {/* Tab: Auth (Host registration/login at the end of the listing process) */}
+          {activeTab === 'auth' && (
+            <div className="space-y-6 animate-in fade-in duration-150">
+              <div className="p-4 bg-emerald-50 rounded-2xl border border-emerald-100 flex gap-3 items-start">
+                <span className="p-2 bg-emerald-600 text-white rounded-xl text-lg shrink-0">✨</span>
+                <div className="space-y-1">
+                  <h4 className="text-sm font-bold text-emerald-950">Último Passo: Identificação e Cadastro</h4>
+                  <p className="text-xs text-emerald-800 leading-relaxed">
+                    Parabéns pela qualidade do seu anúncio! Para publicá-lo permanentemente no portal de Itaituba e começar a receber agendamentos e repasses por Pix, preencha seus dados de acesso abaixo. Sua conta será ativada instantaneamente.
+                  </p>
+                </div>
+              </div>
+
+              {authError && (
+                <div className="p-3.5 bg-rose-50 border border-rose-100 text-rose-800 text-xs font-semibold rounded-xl leading-relaxed flex items-center gap-2">
+                  <span className="p-1 bg-rose-100 text-rose-600 rounded-md">⚠️</span>
+                  {authError}
+                </div>
+              )}
+
+              <div className="max-w-md mx-auto bg-white p-5 border border-slate-150 rounded-2xl shadow-xs space-y-4">
+                <div className="flex bg-slate-100 p-1 rounded-xl text-xs font-bold">
+                  <button
+                    type="button"
+                    onClick={() => { setAuthMode('register'); setAuthError(null); }}
+                    className={`flex-1 py-2 text-center rounded-lg transition-all ${
+                      authMode === 'register' ? 'bg-white text-slate-800 shadow-sm' : 'text-slate-500 hover:text-slate-800'
+                    }`}
+                  >
+                    Quero Criar Nova Conta
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => { setAuthMode('login'); setAuthError(null); }}
+                    className={`flex-1 py-2 text-center rounded-lg transition-all ${
+                      authMode === 'login' ? 'bg-white text-slate-800 shadow-sm' : 'text-slate-500 hover:text-slate-800'
+                    }`}
+                  >
+                    Já Tenho Cadastro
+                  </button>
+                </div>
+
+                {authMode === 'register' ? (
+                  <div className="space-y-3">
+                    <div>
+                      <label className="block text-[10px] font-bold text-slate-500 mb-1 uppercase tracking-wider">Nome Completo do Anfitrião *</label>
+                      <input
+                        type="text"
+                        placeholder="Ex: Beatriz Lima Veras"
+                        value={authName}
+                        onChange={(e) => setAuthName(e.target.value)}
+                        className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-emerald-500/20 text-slate-800 font-semibold"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-[10px] font-bold text-slate-500 mb-1 uppercase tracking-wider">E-mail para Contato *</label>
+                      <input
+                        type="email"
+                        placeholder="Ex: beatriz@exemplo.com"
+                        value={authEmail}
+                        onChange={(e) => setAuthEmail(e.target.value)}
+                        className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-emerald-500/20 text-slate-800 font-semibold"
+                      />
+                    </div>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <label className="block text-[10px] font-bold text-slate-500 mb-1 uppercase tracking-wider">Crie uma Senha *</label>
+                        <input
+                          type="password"
+                          placeholder="Mín. 4 dígitos"
+                          value={authPassword}
+                          onChange={(e) => setAuthPassword(e.target.value)}
+                          className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-emerald-500/20 text-slate-800 font-semibold"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-[10px] font-bold text-slate-500 mb-1 uppercase tracking-wider">Confirme a Senha *</label>
+                        <input
+                          type="password"
+                          placeholder="Repita a senha"
+                          value={authConfirmPassword}
+                          onChange={(e) => setAuthConfirmPassword(e.target.value)}
+                          className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-emerald-500/20 text-slate-800 font-semibold"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    <div>
+                      <label className="block text-[10px] font-bold text-slate-500 mb-1 uppercase tracking-wider">E-mail Cadastrado *</label>
+                      <input
+                        type="email"
+                        placeholder="Ex: beatriz@alugaitb.com.br"
+                        value={authEmail}
+                        onChange={(e) => setAuthEmail(e.target.value)}
+                        className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-emerald-500/20 text-slate-800 font-semibold"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-[10px] font-bold text-slate-500 mb-1 uppercase tracking-wider">Senha do Painel *</label>
+                      <input
+                        type="password"
+                        placeholder="Sua senha secreta"
+                        value={authPassword}
+                        onChange={(e) => setAuthPassword(e.target.value)}
+                        className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-emerald-500/20 text-slate-800 font-semibold"
+                      />
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
         </form>
 
         {/* Footer actions */}
@@ -798,7 +1106,7 @@ export default function AddEnvironmentModal({ onClose, onAdd, ownerId, categorie
               Cancelar
             </button>
             
-            {activeTab !== 'images' ? (
+            {activeTab !== 'images' && activeTab !== 'auth' ? (
               <button
                 type="button"
                 onClick={() => {
@@ -806,17 +1114,25 @@ export default function AddEnvironmentModal({ onClose, onAdd, ownerId, categorie
                   else if (activeTab === 'hours') setActiveTab('agreement');
                   else if (activeTab === 'agreement') setActiveTab('images');
                 }}
-                className="px-4 py-2 max-h-10 text-white text-xs font-semibold bg-emerald-600 hover:bg-emerald-700 rounded-xl transition-colors shadow-sm"
+                className="px-4 py-2 max-h-10 text-white text-xs font-semibold bg-emerald-600 hover:bg-emerald-700 rounded-xl transition-colors shadow-sm cursor-pointer"
               >
                 Avançar Passo
+              </button>
+            ) : activeTab === 'images' && currentUser.email === '' ? (
+              <button
+                type="button"
+                onClick={() => setActiveTab('auth')}
+                className="px-4 py-2 max-h-10 text-white text-xs font-semibold bg-indigo-600 hover:bg-indigo-700 rounded-xl transition-colors shadow-sm cursor-pointer"
+              >
+                Identificação do Anfitrião →
               </button>
             ) : (
               <button
                 type="button"
                 onClick={handleSubmit}
-                className="px-5 py-2 max-h-10 text-white text-xs font-semibold bg-emerald-600 hover:bg-emerald-700 rounded-xl transition-all shadow-sm shadow-emerald-500/10 flex items-center gap-1 animate-pulse"
+                className="px-5 py-2 max-h-10 text-white text-xs font-semibold bg-emerald-600 hover:bg-emerald-700 rounded-xl transition-all shadow-sm shadow-emerald-500/10 flex items-center gap-1 animate-pulse cursor-pointer"
               >
-                <Check className="w-4 h-4" /> Salvar & Publicar Anúncio
+                <Check className="w-4 h-4" /> {currentUser.email === '' ? 'Cadastrar & Publicar Anúncio' : 'Salvar & Publicar Anúncio'}
               </button>
             )}
           </div>

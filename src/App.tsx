@@ -19,7 +19,7 @@ import BrandLogo from './components/BrandLogo';
 import LoginModal from './components/LoginModal';
 
 const GUEST_USER: UserProfile = {
-  name: 'Visitante',
+  name: '',
   email: '',
   role: 'renter',
   balance: 0
@@ -296,7 +296,12 @@ export default function App() {
   };
 
   // Add listing action
-  const handleAddEnvironment = (newEnv: Environment) => {
+  const handleAddEnvironment = (newEnv: Environment, autoLoginUser?: UserProfile) => {
+    if (autoLoginUser) {
+      setCurrentUser(autoLoginUser);
+      // Automatically redirect to owner dashboard
+      setCurrentTab('owner_dash');
+    }
     setEnvironments((prev) => [newEnv, ...prev]);
     setIsAddModalOpen(false);
     showToast('✨ Seu espaço foi anunciado com sucesso e já está disponível para reservas!');
@@ -556,9 +561,13 @@ export default function App() {
         <div className="max-w-7xl mx-auto flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           
           {/* Logo Brand */}
-          <div className="flex items-center">
+          <button 
+            onClick={() => setCurrentTab('browse')} 
+            className="flex items-center text-left hover:opacity-90 active:scale-98 transition-all cursor-pointer bg-transparent border-none p-0 focus:outline-none"
+            title="Ir para a página inicial"
+          >
             <BrandLogo variant="header" />
-          </div>
+          </button>
 
           {/* Navigation links & Switch simulated user */}
           <div className="flex flex-wrap items-center gap-3 mt-1 sm:mt-0">
@@ -687,12 +696,7 @@ export default function App() {
                 <span className="text-[10px] text-slate-400 font-bold hidden md:inline">Quer anunciar seu ambiente?</span>
                 <button
                   onClick={() => {
-                    if (currentUser.role === 'owner' || currentUser.role === 'admin') {
-                      setIsAddModalOpen(true);
-                    } else {
-                      showToast('Para anunciar um espaço, faça login ou cadastre-se como Anfitrião.');
-                      setIsLoginModalOpen(true);
-                    }
+                    setIsAddModalOpen(true);
                   }}
                   className="px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-bold active:scale-98 transition-all shadow-sm cursor-pointer flex items-center justify-center gap-1.5"
                 >
@@ -919,7 +923,7 @@ export default function App() {
                     <div className="flex items-center gap-2 p-2.5 bg-emerald-50 text-emerald-950 rounded-xl border border-emerald-100/50 text-[11px] font-medium animate-in fade-in duration-200">
                       <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-ping shrink-0" />
                       <span>
-                        Filtro principal ativo! Mostrando apenas locais <strong>disponíveis (com expediente livre)</strong> para o dia <strong>{filterDate.split('-').reverse().join('/')}</strong>. Os preços exibidos já simulam as tarifas de fim de semana ou feriados!
+                        Filtro principal ativo! Mostrando apenas locais <strong>disponíveis (com expediente livre)</strong> para o dia <strong>{filterDate.split('-').reverse().join('/')}</strong>. Os preços exibidos já consideram as tarifas de fim de semana ou feriados!
                       </span>
                     </div>
                   )}
@@ -1318,7 +1322,7 @@ export default function App() {
       {/* OVERLAY MODAL: ADD / ANNOUNCE NEW ENVIRONMENT (for hosts) */}
       {isAddModalOpen && (
         <AddEnvironmentModal
-          ownerId={currentUser.email}
+          currentUser={currentUser}
           categories={categories}
           onClose={() => setIsAddModalOpen(false)}
           onAdd={handleAddEnvironment}
