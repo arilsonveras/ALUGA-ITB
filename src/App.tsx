@@ -16,28 +16,14 @@ import ClientDashboard from './components/ClientDashboard';
 import ImageSlider from './components/ImageSlider';
 import AdminPartnersDashboard from './components/AdminPartnersDashboard';
 import BrandLogo from './components/BrandLogo';
+import LoginModal from './components/LoginModal';
 
-// Fictional testing personas to simulate database roles
-const SIMULATED_USERS: UserProfile[] = [
-  {
-    name: 'Arilson (Locatário)',
-    email: 'arilsonverasmoraes@gmail.com',
-    role: 'renter',
-    balance: 0
-  },
-  {
-    name: 'Beatriz S. (Anfitriã)',
-    email: 'owner-default-1',
-    role: 'owner',
-    balance: 1450
-  },
-  {
-    name: 'Admin do Site (Administrador)',
-    email: 'admin@alugaambiente.com.br',
-    role: 'admin',
-    balance: 470
-  }
-];
+const GUEST_USER: UserProfile = {
+  name: 'Visitante',
+  email: '',
+  role: 'renter',
+  balance: 0
+};
 
 const isPromotionActive = (env: Environment): boolean => {
   if (!env.isPromoted || env.promotionStatus !== 'active') return false;
@@ -63,7 +49,7 @@ export default function App() {
   // Current active logged in user persona
   const [currentUser, setCurrentUser] = useState<UserProfile>(() => {
     const savedUser = localStorage.getItem('aluguel_current_user');
-    return savedUser ? JSON.parse(savedUser) : SIMULATED_USERS[0];
+    return savedUser ? JSON.parse(savedUser) : GUEST_USER;
   });
 
   // Navigation controls: 'browse' | 'client_dash' | 'owner_dash' | 'admin_dash'
@@ -135,6 +121,9 @@ export default function App() {
 
   // State to pass down newly completed reservations to show in bottom-left live list immediately
   const [onCompleteReservationTriggered, setOnCompleteReservationTriggered] = useState<Reservation | null>(null);
+
+  // Authentication state
+  const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
 
   // Raw native browser notification request function
   const triggerOwnerBrowserNotification = (title: string, body: string) => {
@@ -281,19 +270,29 @@ export default function App() {
     setTimeout(() => setToastMessage(null), 4000);
   };
 
-  // Switch simulated profiling persona quickly
-  const handleToggleUser = (user: UserProfile) => {
+  // Real login and session authentication triggers
+  const handleLogin = (user: UserProfile) => {
     setCurrentUser(user);
+    localStorage.setItem('aluguel_current_user', JSON.stringify(user));
+    setIsLoginModalOpen(false);
+    
     if (user.role === 'owner') {
       setCurrentTab('owner_dash');
-      showToast(`Perfil alterado para ${user.name}. Modo Anfitrião Ativado!`);
+      showToast(`Bem-vindo, ${user.name}! Modo Anfitrião Ativo.`);
     } else if (user.role === 'admin') {
       setCurrentTab('admin_dash');
-      showToast(`Perfil alterado para ${user.name}. Modo Administrador Ativado!`);
+      showToast(`Bem-vindo, ${user.name}! Painel Administrativo Ativo.`);
     } else {
       setCurrentTab('browse');
-      showToast(`Perfil alterado para ${user.name}. Modo Locatário Ativado!`);
+      showToast(`Olá, ${user.name}! Acesso concedido.`);
     }
+  };
+
+  const handleLogout = () => {
+    setCurrentUser(GUEST_USER);
+    localStorage.removeItem('aluguel_current_user');
+    setCurrentTab('browse');
+    showToast('Sessão encerrada! Você agora está navegando como visitante.');
   };
 
   // Add listing action
@@ -567,13 +566,7 @@ export default function App() {
             {/* Quick App Navigation Tabs */}
             <nav className="flex bg-slate-100/70 p-1 rounded-xl border border-slate-100 text-xs font-semibold">
               <button
-                onClick={() => {
-                  setCurrentTab('browse');
-                  // For safety, force Renter mode if heading back to explore
-                  if (currentUser.role === 'owner') {
-                    handleToggleUser(SIMULATED_USERS[0]);
-                  }
-                }}
+                onClick={() => setCurrentTab('browse')}
                 className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer ${
                   currentTab === 'browse'
                     ? 'bg-white text-slate-800 shadow-sm'
@@ -584,13 +577,7 @@ export default function App() {
               </button>
 
               <button
-                onClick={() => {
-                  // Swap persona to Renter to see client dash safely
-                  if (currentUser.role !== 'renter' && currentUser.role !== 'admin') {
-                    handleToggleUser(SIMULATED_USERS[0]);
-                  }
-                  setCurrentTab('client_dash');
-                }}
+                onClick={() => setCurrentTab('client_dash')}
                 className={`px-3 py-1.5 rounded-lg transition-all flex items-center gap-1 cursor-pointer ${
                   currentTab === 'client_dash'
                     ? 'bg-white text-slate-800 shadow-sm'
@@ -605,22 +592,18 @@ export default function App() {
                 )}
               </button>
 
-              <button
-                onClick={() => {
-                  // Swap persona to Owner to see owner dash safely
-                  if (currentUser.role !== 'owner') {
-                    handleToggleUser(SIMULATED_USERS[1]);
-                  }
-                  setCurrentTab('owner_dash');
-                }}
-                className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer ${
-                  currentTab === 'owner_dash'
-                    ? 'bg-white text-slate-800 shadow-sm'
-                    : 'text-slate-500 hover:text-slate-800'
-                }`}
-              >
-                🔑 Meus Anúncios
-              </button>
+              {(currentUser.role === 'owner' || currentUser.role === 'admin') && (
+                <button
+                  onClick={() => setCurrentTab('owner_dash')}
+                  className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer ${
+                    currentTab === 'owner_dash'
+                      ? 'bg-white text-slate-800 shadow-sm'
+                      : 'text-slate-500 hover:text-slate-800'
+                  }`}
+                >
+                  🔑 Meus Anúncios
+                </button>
+              )}
 
               {currentUser.role === 'admin' && (
                 <button
@@ -636,28 +619,33 @@ export default function App() {
               )}
             </nav>
 
-            {/* Simulated Account Selector */}
-            <div className="flex items-center gap-1 text-xs border border-slate-200/80 bg-slate-50 rounded-xl p-1 shrink-0">
-              <span className="text-[10px] text-slate-400 font-bold uppercase tracking-widest pl-1.5 pr-1 hidden lg:inline">Simular Usuário:</span>
-              <div className="flex items-center gap-1">
-                {SIMULATED_USERS.map((user) => {
-                  const isActive = currentUser.email === user.email;
-                  return (
-                    <button
-                      key={user.email}
-                      onClick={() => handleToggleUser(user)}
-                      className={`px-2.5 py-1 rounded-lg font-medium cursor-pointer transition-colors ${
-                        isActive 
-                          ? 'bg-slate-800 text-white font-semibold' 
-                          : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200/50'
-                      }`}
-                    >
-                      {user.name.split(' ')[0]}
-                    </button>
-                  );
-                })}
+            {/* Real Auth button or profile dropdown */}
+            {currentUser.email === '' ? (
+              <button
+                onClick={() => setIsLoginModalOpen(true)}
+                className="px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-bold transition-all shadow-xs cursor-pointer flex items-center gap-1.5"
+              >
+                🔑 Entrar / Painel
+              </button>
+            ) : (
+              <div className="flex items-center gap-2 text-xs border border-slate-200 bg-slate-50 rounded-xl p-1 shrink-0">
+                <div className="px-2.5 py-1 flex items-center gap-2">
+                  <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                  <span className="font-semibold text-slate-700 truncate max-w-[120px]" title={currentUser.name}>
+                    {currentUser.name.split(' ')[0]} 
+                    <span className="text-[10px] text-slate-400 font-normal pl-1 leading-none">
+                      ({currentUser.role === 'admin' ? 'Adm' : 'Anfitrião'})
+                    </span>
+                  </span>
+                </div>
+                <button
+                  onClick={handleLogout}
+                  className="px-2 py-1 bg-white hover:bg-red-50 hover:text-red-750 text-slate-500 hover:text-red-650 rounded-lg font-bold border border-slate-200 transition-all cursor-pointer"
+                >
+                  Sair
+                </button>
               </div>
-            </div>
+            )}
 
           </div>
         </div>
@@ -699,8 +687,12 @@ export default function App() {
                 <span className="text-[10px] text-slate-400 font-bold hidden md:inline">Quer anunciar seu ambiente?</span>
                 <button
                   onClick={() => {
-                    handleToggleUser(SIMULATED_USERS[1]);
-                    setIsAddModalOpen(true);
+                    if (currentUser.role === 'owner' || currentUser.role === 'admin') {
+                      setIsAddModalOpen(true);
+                    } else {
+                      showToast('Para anunciar um espaço, faça login ou cadastre-se como Anfitrião.');
+                      setIsLoginModalOpen(true);
+                    }
                   }}
                   className="px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-bold active:scale-98 transition-all shadow-sm cursor-pointer flex items-center justify-center gap-1.5"
                 >
@@ -1345,6 +1337,14 @@ export default function App() {
           initialSelectedDate={filterDate}
           partners={partners}
           reviews={reviews}
+        />
+      )}
+
+      {/* LOGIN MODAL COMPONENT */}
+      {isLoginModalOpen && (
+        <LoginModal 
+          onClose={() => setIsLoginModalOpen(false)}
+          onLoginSuccess={handleLogin}
         />
       )}
 

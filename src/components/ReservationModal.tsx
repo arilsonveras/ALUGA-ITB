@@ -96,6 +96,18 @@ export default function ReservationModal({
   
   // Stages: 'setup' | 'contract' | 'payment' | 'success'
   const [stage, setStage] = useState<'setup' | 'contract' | 'payment' | 'success'>('setup');
+
+  // Gest contact details
+  const [renterNameInput, setRenterNameInput] = useState(userName || '');
+  const [renterEmailInput, setRenterEmailInput] = useState(userEmail || '');
+  const [renterPhoneInput, setRenterPhoneInput] = useState('');
+  const [contactError, setContactError] = useState<string | null>(null);
+
+  // Sync state when props shift
+  useEffect(() => {
+    if (userName) setRenterNameInput(userName);
+    if (userEmail) setRenterEmailInput(userEmail);
+  }, [userName, userEmail]);
   
   // Custom reviews extraction for current environment
   const envReviews = reviews.filter((r) => r.environmentId === environment.id);
@@ -270,6 +282,21 @@ export default function ReservationModal({
 
   const handleAdvanceToContract = () => {
     if (hoursError) return;
+    setContactError(null);
+
+    if (!renterNameInput.trim()) {
+      setContactError('Por favor, informe o seu nome completo para a reserva.');
+      return;
+    }
+    if (!renterEmailInput.trim() || !renterEmailInput.includes('@')) {
+      setContactError('Por favor, informe um e-mail válido para contato.');
+      return;
+    }
+    if (!renterPhoneInput.trim()) {
+      setContactError('Por favor, informe um celular/WhatsApp para poder receber notificações de agendamento.');
+      return;
+    }
+
     setStage('contract');
   };
 
@@ -293,8 +320,9 @@ export default function ReservationModal({
     const reservation: Reservation = {
       id: refId,
       environmentId: environment.id,
-      renterEmail: userEmail,
-      renterName: userName,
+      renterEmail: renterEmailInput.trim(),
+      renterName: renterNameInput.trim(),
+      renterPhone: renterPhoneInput.trim(),
       date,
       startTime,
       endTime,
@@ -713,6 +741,63 @@ export default function ReservationModal({
 
                 <div className="p-3.5 bg-slate-50 border border-slate-150 rounded-xl text-xs text-slate-500 leading-relaxed">
                   💡 <strong>Período de Uso:</strong> O aluguel é cobrado por diária fechada. O horário de entrada e saída é pré-definido com base no expediente de funcionamento do espaço selecionado e não é editável.
+                </div>
+
+                {/* Guest Contact Information Section */}
+                <div className="bg-slate-50 border border-slate-150 p-4 rounded-xl space-y-3">
+                  <span className="text-[10px] uppercase font-bold tracking-wider text-slate-550 block flex items-center gap-1">
+                    👤 Dados do Locatário (Para Contrato e PIX)
+                  </span>
+                  
+                  {contactError && (
+                    <div className="p-2.5 bg-red-50 border border-red-150 text-red-600 rounded-lg text-xs font-semibold animate-shake">
+                      ⚠️ {contactError}
+                    </div>
+                  )}
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-35 gap-3">
+                    <div>
+                      <label className="block text-[10px] uppercase font-bold text-slate-450 mb-1">Nome Completo</label>
+                      <input
+                        type="text"
+                        value={renterNameInput}
+                        onChange={(e) => {
+                          setRenterNameInput(e.target.value);
+                          setContactError(null);
+                        }}
+                        placeholder="Seu nome"
+                        className="w-full text-xs font-sans bg-white border border-slate-200 rounded-lg p-2.5 focus:ring-1 focus:ring-emerald-500 text-slate-700 outline-none"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-[10px] uppercase font-bold text-slate-450 mb-1">Endereço de E-mail</label>
+                      <input
+                        type="email"
+                        value={renterEmailInput}
+                        onChange={(e) => {
+                          setRenterEmailInput(e.target.value);
+                          setContactError(null);
+                        }}
+                        placeholder="Ex: seuemail@gmail.com"
+                        className="w-full text-xs font-sans bg-white border border-slate-200 rounded-lg p-2.5 focus:ring-1 focus:ring-emerald-500 text-slate-700 outline-none"
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-[10px] uppercase font-bold text-slate-450 mb-1">WhatsApp / Telefone de Contato</label>
+                    <input
+                      type="tel"
+                      value={renterPhoneInput}
+                      onChange={(e) => {
+                        setRenterPhoneInput(e.target.value);
+                        setContactError(null);
+                      }}
+                      placeholder="Ex: (93) 99999-8888"
+                      className="w-full text-xs font-sans bg-white border border-slate-200 rounded-lg p-2.5 focus:ring-1 focus:ring-emerald-500 text-slate-700 outline-none"
+                    />
+                  </div>
                 </div>
 
                 <div>

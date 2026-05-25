@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { Calendar, Clock, DollarSign, FileText, CheckCircle, Shield, X, AlertTriangle, Info, Copy, Check, Star } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Calendar, Clock, DollarSign, FileText, CheckCircle, Shield, X, AlertTriangle, Info, Copy, Check, Star, Search, LogOut, Mail } from 'lucide-react';
 import { Reservation, Environment, EnvironmentReview } from '../types';
 import { generatePixPayload } from '../utils/pix';
 
@@ -38,6 +38,37 @@ export default function ClientDashboard({
   const [payingRemainderResId, setPayingRemainderResId] = useState<string | null>(null);
   const [copiedRemainderId, setCopiedRemainderId] = useState<string | null>(null);
 
+  const [activeEmail, setActiveEmail] = useState(() => {
+    return renterEmail || localStorage.getItem('local_searched_renter_email') || '';
+  });
+  const [typedEmail, setTypedEmail] = useState('');
+
+  // Sync state if currentUser email updates from parent (e.g., ADM logs in/out)
+  useEffect(() => {
+    if (renterEmail) {
+      setActiveEmail(renterEmail);
+    } else {
+      // If parent cleared, keep local storage search if valid, otherwise do nothing
+      const saved = localStorage.getItem('local_searched_renter_email') || '';
+      setActiveEmail(saved);
+    }
+  }, [renterEmail]);
+
+  const handleSaveSearchEmail = (e: React.FormEvent) => {
+    e.preventDefault();
+    const emailToSet = typedEmail.trim().toLowerCase();
+    if (emailToSet && emailToSet.includes('@')) {
+      setActiveEmail(emailToSet);
+      localStorage.setItem('local_searched_renter_email', emailToSet);
+      setTypedEmail('');
+    }
+  };
+
+  const handleClearEmail = () => {
+    setActiveEmail('');
+    localStorage.removeItem('local_searched_renter_email');
+  };
+
   const getReservationReview = (resId: string) => {
     return reviews.find(r => r.id === `rev-${resId}`);
   };
@@ -54,7 +85,7 @@ export default function ClientDashboard({
     }
   };
 
-  const myReservations = reservations.filter((r) => r.renterEmail === renterEmail);
+  const myReservations = reservations.filter((r) => r.renterEmail.toLowerCase() === activeEmail.toLowerCase());
 
   const [selectedContractRes, setSelectedContractRes] = useState<Reservation | null>(null);
   const [copiedResId, setCopiedResId] = useState<string | null>(null);
@@ -82,59 +113,104 @@ export default function ClientDashboard({
     <div className="space-y-6">
       
       {/* Title Header */}
-      <div>
-        <h2 className="font-display font-semibold text-slate-800 text-lg">Minhas Reservas Agendadas</h2>
-        <p className="text-xs text-slate-400 mt-0.5">Veja todas as suas locações contratadas, consulte regras assinadas e liquide pendências de pagamento</p>
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-slate-100 pb-4">
+        <div>
+          <h2 className="font-display font-semibold text-slate-800 text-lg">Minhas Reservas Agendadas</h2>
+          <p className="text-xs text-slate-400 mt-0.5">Veja todas as suas locações contratadas, consulte regras assinadas e liquide pendências de pagamento</p>
+        </div>
+        {activeEmail && (
+          <button
+            onClick={handleClearEmail}
+            className="self-start sm:self-center flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 hover:bg-red-50 hover:text-red-600 text-slate-600 rounded-lg text-[11px] font-bold transition-all cursor-pointer border border-slate-200"
+            title="Mudar e-mail de consulta"
+          >
+            <LogOut className="w-3.5 h-3.5" /> Mudar Usuário / Sair ({activeEmail})
+          </button>
+        )}
       </div>
 
-      {myReservations.length === 0 ? (
-        <div className="bg-white p-12 text-center border border-slate-100 rounded-2xl max-w-2xl mx-auto space-y-4">
-          <div className="w-12 h-12 bg-slate-50 text-slate-400 rounded-full flex items-center justify-center mx-auto text-lg">
-            🗺️
+      {!activeEmail ? (
+        <div className="bg-white border border-slate-100 rounded-3xl p-6 sm:p-10 max-w-xl mx-auto text-center space-y-5 shadow-xs">
+          <div className="w-12 h-12 bg-indigo-50 text-indigo-600 rounded-full flex items-center justify-center mx-auto text-xl">
+            <Mail className="w-5 h-5" />
           </div>
-          <div className="space-y-1">
-            <h4 className="text-sm font-semibold text-slate-700">Nenhuma reserva encontrada</h4>
-            <p className="text-xs text-slate-400 max-w-sm mx-auto leading-relaxed">Você ainda não alugou nenhum espaço. Dê uma olhada nos ambientes disponíveis na página inicial e faça seu agendamento já!</p>
+          <div className="space-y-1.5">
+            <h3 className="font-display font-bold text-slate-800 text-sm sm:text-base">Consulte Suas Locações</h3>
+            <p className="text-xs text-slate-400 max-w-sm mx-auto leading-relaxed">
+              Digite abaixo o endereço de e-mail utilizado durante a realização da reserva para ver sua listagem, baixar contratos e conferir PIX pendentes.
+            </p>
           </div>
+
+          <form onSubmit={handleSaveSearchEmail} className="flex gap-2 max-w-md mx-auto">
+            <div className="relative flex-1">
+              <Mail className="absolute left-3.5 top-3 w-4 h-4 text-slate-400" />
+              <input
+                type="email"
+                required
+                value={typedEmail}
+                onChange={(e) => setTypedEmail(e.target.value)}
+                placeholder="Ex e-mail: seuemail@gmail.com"
+                className="w-full text-xs font-sans pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-1 focus:ring-indigo-500 focus:bg-white text-slate-800 placeholder-slate-400 outline-none"
+              />
+            </div>
+            <button
+              type="submit"
+              className="px-5 py-2.5 bg-slate-800 hover:bg-slate-900 text-white rounded-xl text-xs font-bold transition-all cursor-pointer shrink-0"
+            >
+              Consultar
+            </button>
+          </form>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {myReservations.map((res) => {
-            const env = getEnvDetails(res.environmentId);
-            if (!env) return null;
+        <>
+          {myReservations.length === 0 ? (
+            <div className="bg-white p-12 text-center border border-slate-100 rounded-2xl max-w-2xl mx-auto space-y-4">
+              <div className="w-12 h-12 bg-slate-50 text-slate-400 rounded-full flex items-center justify-center mx-auto text-lg">
+                🗺️
+              </div>
+              <div className="space-y-1">
+                <h4 className="text-sm font-semibold text-slate-705">Nenhuma reserva encontrada para "{activeEmail}"</h4>
+                <p className="text-xs text-slate-400 max-w-sm mx-auto leading-relaxed mt-1">Você ainda não alugou nenhum espaço com este endereço de e-mail. Dê uma olhada nos ambientes disponíveis e agende!</p>
+              </div>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {myReservations.map((res) => {
+                const env = getEnvDetails(res.environmentId);
+                if (!env) return null;
 
-            return (
-              <div 
-                key={res.id} 
-                className={`bg-white rounded-2xl border p-5 space-y-4 transition-all flex flex-col justify-between ${
-                  res.status === 'confirmed' 
-                    ? 'border-emerald-100 shadow-emerald-500/[0.01]' 
-                    : res.status === 'pending_payment'
-                      ? 'border-amber-150 border-amber-200'
-                      : 'border-slate-100 opacity-75'
-                }`}
-              >
-                {/* Header card summary */}
-                <div className="space-y-2">
-                  <div className="flex items-start justify-between gap-2.5">
-                    <div className="min-w-0">
-                      <span className="text-[10px] font-bold text-slate-400 tracking-wider font-mono">CÓD: {res.id}</span>
-                      <h3 className="font-bold text-slate-800 text-sm truncate mt-0.5">{env.title}</h3>
-                      <p className="text-[11px] text-slate-500 truncate">{env.address}</p>
-                    </div>
-                    
-                    <span className={`text-[10px] font-extrabold px-2.5 py-1 rounded-full shrink-0 ${
-                      res.status === 'confirmed'
-                        ? 'bg-emerald-50 text-emerald-700 border border-emerald-100'
+                return (
+                  <div 
+                    key={res.id} 
+                    className={`bg-white rounded-2xl border p-5 space-y-4 transition-all flex flex-col justify-between ${
+                      res.status === 'confirmed' 
+                        ? 'border-emerald-100 shadow-emerald-500/[0.01]' 
                         : res.status === 'pending_payment'
-                          ? 'bg-amber-50 text-amber-700 border border-amber-100'
-                          : 'bg-red-50 text-red-700 border border-red-50'
-                    }`}>
-                      {res.status === 'confirmed' && 'RESERVADO & PAGO'}
-                      {res.status === 'pending_payment' && 'AGUARDANDO PAGAMENTO'}
-                      {res.status === 'cancelled' && 'CANCELADO'}
-                    </span>
-                  </div>
+                          ? 'border-amber-150 border-amber-200'
+                          : 'border-slate-100 opacity-75'
+                    }`}
+                  >
+                    {/* Header card summary */}
+                    <div className="space-y-2">
+                      <div className="flex items-start justify-between gap-2.5">
+                        <div className="min-w-0">
+                          <span className="text-[10px] font-bold text-slate-400 tracking-wider font-mono">CÓD: {res.id}</span>
+                          <h3 className="font-bold text-slate-800 text-sm truncate mt-0.5">{env.title}</h3>
+                          <p className="text-[11px] text-slate-500 truncate">{env.address}</p>
+                        </div>
+                        
+                        <span className={`text-[10px] font-extrabold px-2.5 py-1 rounded-full shrink-0 ${
+                          res.status === 'confirmed'
+                            ? 'bg-emerald-50 text-emerald-700 border border-emerald-100'
+                            : res.status === 'pending_payment'
+                              ? 'bg-amber-50 text-amber-700 border border-amber-100'
+                              : 'bg-red-50 text-red-700 border border-red-50'
+                        }`}>
+                          {res.status === 'confirmed' && 'RESERVADO & PAGO'}
+                          {res.status === 'pending_payment' && 'AGUARDANDO PAGAMENTO'}
+                          {res.status === 'cancelled' && 'CANCELADO'}
+                        </span>
+                      </div>
 
                   {/* Scheduled period variables */}
                   <div className="space-y-2">
@@ -499,8 +575,9 @@ export default function ClientDashboard({
             );
           })}
         </div>
-
       )}
+    </>
+  )}
 
       {/* Contract Reader Modal */}
       {selectedContractRes && (
